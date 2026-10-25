@@ -1,0 +1,6 @@
+// Increase VERSION when deploying changes; user data in localStorage is never removed.
+const VERSION='book-quotes-pwa-v1-20261025';
+const APP_SHELL=['./','./index.html','./manifest.webmanifest','./icon.svg','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(VERSION).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('book-quotes-pwa-')&&key!==VERSION).map(key=>caches.delete(key)))),self.clients.claim()]))});
+self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;event.respondWith((async()=>{const cache=await caches.open(VERSION);if(req.mode==='navigate'){try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response}catch{return await cache.match(req)||await cache.match('./index.html')||Response.error()}}const hit=await cache.match(req);if(hit)return hit;try{const response=await fetch(req);if(response.ok)await cache.put(req,response.clone());return response}catch{return Response.error()}})())});
